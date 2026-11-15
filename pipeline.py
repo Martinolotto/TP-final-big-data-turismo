@@ -65,10 +65,24 @@ def validate():
     print(f"Registros rechazados: {cant_rechazados}")
 
 
+def clean():
+    """Recupera y normaliza los registros corregibles en rechazados_limpios."""
+
+    with duckdb.connect(str(DB_PATH)) as con:
+        con.execute(read_sql("limpiar.sql"))
+
+        cant_recuperados = con.execute(
+            "SELECT COUNT(*) FROM rechazados_limpios"
+        ).fetchone()[0]
+
+    print(f"Registros recuperados (rechazados_limpios): {cant_recuperados}")
+
+
 def main():
     """Punto de entrada del pipeline."""
     extract()
     validate()
+    clean()
 
 
 if __name__ == "__main__":
