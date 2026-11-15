@@ -78,11 +78,25 @@ def clean():
     print(f"Registros recuperados (rechazados_limpios): {cant_recuperados}")
 
 
+def merge():
+    """Une validos y rechazados_limpios en tabla_final con tipos finales."""
+
+    with duckdb.connect(str(DB_PATH)) as con:
+        con.execute(read_sql("unir.sql"))
+
+        total_final, ids_unicos = con.execute(
+            "SELECT COUNT(*), COUNT(DISTINCT id_reserva) FROM tabla_final"
+        ).fetchone()
+
+    print(f"Registros en tabla_final: {total_final} (IDs únicos: {ids_unicos})")
+
+
 def main():
     """Punto de entrada del pipeline."""
     extract()
     validate()
     clean()
+    merge()
 
 
 if __name__ == "__main__":
