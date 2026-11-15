@@ -1,4 +1,3 @@
-
 """
 Pipeline ETL de reservas hoteleras - ViajaYa Turismo.
 
@@ -53,9 +52,23 @@ def extract():
     print(f"Vacíos (país, noches, total): {vacios}")
 
 
+def validate():
+    """Evalúa las reglas de calidad y separa en validos y rechazados."""
+
+    with duckdb.connect(str(DB_PATH)) as con:
+        con.execute(read_sql("validar.sql"))
+
+        cant_validos = con.execute("SELECT COUNT(*) FROM validos").fetchone()[0]
+        cant_rechazados = con.execute("SELECT COUNT(*) FROM rechazados").fetchone()[0]
+
+    print(f"Registros válidos: {cant_validos}")
+    print(f"Registros rechazados: {cant_rechazados}")
+
+
 def main():
     """Punto de entrada del pipeline."""
     extract()
+    validate()
 
 
 if __name__ == "__main__":
