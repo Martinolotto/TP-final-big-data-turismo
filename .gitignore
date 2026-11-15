@@ -6,3 +6,5 @@ __pycache__/
 *.duckdb.wal
 # Base generada localmente; se incorporará para la entrega final.
 *.duckdb
+# Archivos temporales de Marimo
+**/__marimo__/
