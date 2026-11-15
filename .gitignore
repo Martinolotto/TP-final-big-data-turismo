@@ -4,3 +4,5 @@ __pycache__/
 *.py[cod]
 .env
 *.duckdb.wal
+# Base generada localmente; se incorporará para la entrega final.
+*.duckdb
