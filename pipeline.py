@@ -1,4 +1,3 @@
-
 """
 Pipeline ETL de reservas hoteleras - ViajaYa Turismo.
 
@@ -53,9 +52,51 @@ def extract():
     print(f"Vacíos (país, noches, total): {vacios}")
 
 
+def validate():
+    """Evalúa las reglas de calidad y separa en validos y rechazados."""
+
+    with duckdb.connect(str(DB_PATH)) as con:
+        con.execute(read_sql("validar.sql"))
+
+        cant_validos = con.execute("SELECT COUNT(*) FROM validos").fetchone()[0]
+        cant_rechazados = con.execute("SELECT COUNT(*) FROM rechazados").fetchone()[0]
+
+    print(f"Registros válidos: {cant_validos}")
+    print(f"Registros rechazados: {cant_rechazados}")
+
+
+def clean():
+    """Recupera y normaliza los registros corregibles en rechazados_limpios."""
+
+    with duckdb.connect(str(DB_PATH)) as con:
+        con.execute(read_sql("limpiar.sql"))
+
+        cant_recuperados = con.execute(
+            "SELECT COUNT(*) FROM rechazados_limpios"
+        ).fetchone()[0]
+
+    print(f"Registros recuperados (rechazados_limpios): {cant_recuperados}")
+
+
+def merge():
+    """Une validos y rechazados_limpios en tabla_final con tipos finales."""
+
+    with duckdb.connect(str(DB_PATH)) as con:
+        con.execute(read_sql("unir.sql"))
+
+        total_final, ids_unicos = con.execute(
+            "SELECT COUNT(*), COUNT(DISTINCT id_reserva) FROM tabla_final"
+        ).fetchone()
+
+    print(f"Registros en tabla_final: {total_final} (IDs únicos: {ids_unicos})")
+
+
 def main():
     """Punto de entrada del pipeline."""
     extract()
+    validate()
+    clean()
+    merge()
 
 
 if __name__ == "__main__":
