@@ -18,10 +18,18 @@ def _():
 
 
 @app.cell
-def _(duckdb_conn, mo):
+def _(
+    duckdb_conn,
+    mo,
+    raw_reservas,
+    rechazados,
+    rechazados_limpios,
+    tabla_final,
+    validos,
+):
     conteos_etl = mo.sql(
         f"""
-        -- 1. control de registros entre etapas
+        -- control de registros entre etapas
         -- la separacion debe conservar 2575 filas, y la tabla final 2500 ids unicos
         SELECT
             (SELECT COUNT(*) FROM raw_reservas) AS originales,
@@ -37,10 +45,10 @@ def _(duckdb_conn, mo):
 
 
 @app.cell
-def _(duckdb_conn, mo):
+def _(duckdb_conn, mo, raw_reservas):
     duplicados_origen = mo.sql(
         f"""
-        -- 2. cantidad de filas repetidas en el csv original
+        -- cantidad de filas repetidas en el csv original
         -- si hay 2575 filas y 2500 ids distintos, hay 75 copias adicionales
         SELECT
             COUNT(*) AS filas_originales,
@@ -54,10 +62,10 @@ def _(duckdb_conn, mo):
 
 
 @app.cell
-def _(duckdb_conn, mo):
+def _(duckdb_conn, mo, raw_reservas):
     duplicados_por_id = mo.sql(
         f"""
-        -- 3. ver cuantos ids aparecen mas de una vez
+        -- ver cuantos ids aparecen mas de una vez
         -- sirve para explicar de donde salen los registros duplicados
         SELECT
             id_reserva,
@@ -73,10 +81,10 @@ def _(duckdb_conn, mo):
 
 
 @app.cell
-def _(duckdb_conn, mo):
+def _(duckdb_conn, mo, tabla_final):
     calidad_final = mo.sql(
         f"""
-        -- 4. revisar fechas, noches, importes y huespedes
+        -- revisar fechas, noches, importes y huespedes
         -- el resultado esperado es 0 en las cuatro columnas
         SELECT
             COUNT(*) FILTER (
@@ -104,10 +112,10 @@ def _(duckdb_conn, mo):
 
 
 @app.cell
-def _(duckdb_conn, mo):
+def _(duckdb_conn, mo, tabla_final):
     tipos_final = mo.sql(
         f"""
-        -- 5. revisar los tipos que quedaron en tabla_final
+        -- revisar los tipos que quedaron en tabla_final
         -- las fechas deben ser DATE, las cantidades INTEGER y los importes DOUBLE
         DESCRIBE tabla_final;
         """,
@@ -117,10 +125,10 @@ def _(duckdb_conn, mo):
 
 
 @app.cell
-def _(duckdb_conn, mo):
+def _(duckdb_conn, mo, tabla_final):
     categorias_final = mo.sql(
         f"""
-        -- 6. revisar categorias y paises vacios en la tabla final
+        -- revisar categorias y paises vacios en la tabla final
         -- las tres columnas deberian devolver 0
         SELECT
             COUNT(*) FILTER (
@@ -142,10 +150,10 @@ def _(duckdb_conn, mo):
 
 
 @app.cell
-def _(duckdb_conn, mo):
+def _(duckdb_conn, mo, rechazados, rechazados_limpios):
     ejemplos_limpieza = mo.sql(
         f"""
-        -- 7. ejemplos de datos antes y despues de la limpieza
+        -- ejemplos de datos antes y despues de la limpieza
         -- cada fila permite revisar que se corrigio y que se mantuvo
         -- es una muestra, el JOIN puede repetir ids que estaban duplicados
         SELECT
@@ -167,6 +175,26 @@ def _(duckdb_conn, mo):
     )
     return
 
+
+@app.cell
+def _(duckdb_conn, mo, rechazados):
+    _df = mo.sql(
+        f"""
+        -- cantidad de registros rechazados por cada regla
+        -- un registro puede incumplir mas de una regla
+
+        SELECT
+            TRIM(regla) AS regla,
+            COUNT(*) AS cantidad
+        FROM rechazados,
+        UNNEST(string_split(motivo_rechazo, ';')) AS t(regla)
+        WHERE TRIM(regla) <> ''
+        GROUP BY TRIM(regla)
+        ORDER BY cantidad DESC;
+        """,
+        engine=duckdb_conn
+    )
+    return
 
 
 if __name__ == "__main__":
