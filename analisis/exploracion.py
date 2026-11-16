@@ -9,16 +9,21 @@ def _(df, pd):
     # Comparamos las noches declaradas con la diferencia entre fechas.
     fechas = df.copy()
 
+
     fechas["fecha_checkin"] = pd.to_datetime(
         fechas["fecha_checkin"],
+        format="mixed",
+        dayfirst=True,
         errors="coerce"
     )
 
     fechas["fecha_checkout"] = pd.to_datetime(
         fechas["fecha_checkout"],
+        format="mixed",
         dayfirst=True,
         errors="coerce"
     )
+
 
     fechas["noches_calculadas"] = (
         fechas["fecha_checkout"] - fechas["fecha_checkin"]
