@@ -5,24 +5,24 @@
 
 SELECT
     ciudad,
-    SUM(total) AS recaudacion_total
+    ROUND(SUM(total), 2) AS recaudacion_total
 FROM tabla_final
 GROUP BY ciudad
 ORDER BY recaudacion_total DESC;
 
 
 -- Pregunta 2: cuantas noches reservadas hubo por mes de check-in (primeros 6 meses)?
--- usamos la fecha de ingreso para obtener el mes de cada resrva
+-- usamos la fecha de ingreso para obtener el mes de cada reserva
 -- sumamos las noches por mes, manteniendo separados los distintos años
--- filtramos de enero a junio
+-- tomamos los primeros seis meses registrados
 
 SELECT
     DATE_TRUNC('month', fecha_checkin) AS mes_checkin,
     SUM(noches) AS noches_reservadas
 FROM tabla_final
-WHERE EXTRACT(MONTH FROM fecha_checkin) BETWEEN 1 AND 6
 GROUP BY mes_checkin
-ORDER BY mes_checkin;
+ORDER BY mes_checkin
+LIMIT 6;
 
 
 -- Pregunta 3: cual es el total promedio por reserva segun tipo de habitacion?
@@ -31,7 +31,7 @@ ORDER BY mes_checkin;
 
 SELECT
     tipo_habitacion,
-    AVG(total) AS total_promedio
+    ROUND(AVG(total), 2) AS total_promedio
 FROM tabla_final
 GROUP BY tipo_habitacion
 ORDER BY total_promedio DESC;
@@ -56,7 +56,7 @@ LIMIT 1;
 
 SELECT
     pais,
-    AVG(noches) AS estadia_promedio
+    ROUND(AVG(noches), 2) AS estadia_promedio
 FROM tabla_final
 GROUP BY pais
 ORDER BY estadia_promedio DESC;

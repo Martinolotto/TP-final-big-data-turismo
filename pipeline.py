@@ -90,6 +90,16 @@ def merge():
 
     print(f"Registros en tabla_final: {total_final} (IDs únicos: {ids_unicos})")
 
+def business_queries():
+    """Ejecuta las consultas de negocio sobre tabla_final."""
+
+    with duckdb.connect(str(DB_PATH), read_only=True) as con:
+        consultas = read_sql("consultas.sql")
+
+        for numero, consulta in enumerate(consultas.split(";"), 1):
+            if consulta.strip():
+                print(f"\nPregunta {numero}")
+                print(con.execute(consulta).fetchdf().to_string(index=False))
 
 def main():
     """Punto de entrada del pipeline."""
@@ -97,6 +107,7 @@ def main():
     validate()
     clean()
     merge()
+    business_queries()
 
 
 if __name__ == "__main__":

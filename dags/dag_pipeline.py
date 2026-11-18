@@ -25,7 +25,8 @@ sys.path.insert(0, str(BASE_DIR))
     ),
     schedule="0 2 * * *", # todos los dias a las 2am
     catchup=False, #evita programar ejecuciones historicas pendientes
-)#sag se aplica automaticamente a la funcion de abajo
+    max_active_runs=1, #para evitar q dos ejecuciones del mismo
+)#sag se aplica automaticamente a la funcion de abajo dag trabajen al mimso tiempo sobre nuestra bd
 
 def turismo_etl():
     """Define las tareas del ETL y sus dependencias"""
@@ -54,13 +55,21 @@ def turismo_etl():
         from pipeline import merge
         merge()
 
+    @task
+    def consultas_negocio():
+        """Ejecuta las consultas sobre tabla_final"""
+        from pipeline import business_queries
+        business_queries()
+
     # Cada etapa depende de que finalice la anterior.
     extraccion = extraer()
     validacion = validar()
     limpieza = limpiar()
     union = unir()
-#orden obligatorio entre tareas, establece dependencias entre las funciones
-    extraccion >> validacion >> limpieza >> union
+    negocio = consultas_negocio()
+
+    #orden obligatorio entre tareas, establece dependencias entre las funciones
+    extraccion >> validacion >> limpieza >> union >> negocio
 
 
 # Registra el DAG para que Airflow pueda descubrirlo
